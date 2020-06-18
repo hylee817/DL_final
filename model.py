@@ -25,6 +25,7 @@ import copy
 from sklearn.preprocessing import normalize
 import csv
 from CNN import CNNModel
+from EarlyStopping import EarlyStopping
 
 
 np.random.seed(123)
@@ -32,15 +33,19 @@ torch.manual_seed(123)
 img_size = 255
 #####################################
 
-train_dataset = ImageFolder(root='corona_dataset/Coronahack-Chest-XRay-Dataset/Coronahack-Chest-XRay-Dataset/train', transform=transforms.Compose([
-                               transforms.Resize(img_size),       # 128 on one dimension
+train_dataset = ImageFolder(root='corona_dataset/Coronahack-Chest-XRay-Dataset/Coronahack-Chest-XRay-Dataset/train',
+                            transform=transforms.Compose([
+                               transforms.Resize(300),      #300
+                               transforms.RandomCrop(img_size),  # 255 on one dimension
                                transforms.CenterCrop(img_size),  # square
                                transforms.ToTensor(),       # CxHxW FloatTensor (= 0~1 normalize automatically)
                                transforms.Normalize((0.5, 0.5, 0.5),  # -1 ~ 1 normalize
                                                     (0.5, 0.5, 0.5)), # (c - m)/s
+                               # transforms.RandomErasing()
                            ]))
-valid_dataset = ImageFolder(root='corona_dataset/Coronahack-Chest-XRay-Dataset/Coronahack-Chest-XRay-Dataset/test' , transform=transforms.Compose([
-                               transforms.Resize(img_size),       # 128 on one dimension
+valid_dataset = ImageFolder(root='corona_dataset/Coronahack-Chest-XRay-Dataset/Coronahack-Chest-XRay-Dataset/test' ,
+                            transform=transforms.Compose([
+                               transforms.Resize(img_size),       # 255 on one dimension
                                transforms.CenterCrop(img_size),  # square
                                transforms.ToTensor(),       # Tensor (= 0~1 normalize)
                                transforms.Normalize((0.5, 0.5, 0.5),  # -1 ~ 1 normalize
@@ -64,13 +69,12 @@ print("==> DATA LOADED")
 # print("==> first batch")
 
 ######################################################
-# model = models.resnet18() #predefined model. try not to use.
 model = resnet18(3, 1) #3 channels & 2 classes
-# model = resnet34(3,2)
+# model = resnet34(3,1)
 # model = CNNModel()
 # model = CustomCNN((batch_size, 3, 255, 255) , 1)
 print("==> MODEL LOADED")
-print(model)
+# print(model)
 
 #hyperparams
 num_epochs = 20
@@ -89,7 +93,9 @@ scheduler = None
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
 criterion = criterion.to(device)
+es = EarlyStopping(patience=10)
 print("==> MODEL ON GPU: {}".format(device))
+
 
 #binary
 def get_bin_label(y_pred, y_test): # [-7.8995]...
@@ -125,8 +131,12 @@ trn_loss_list = []
 val_loss_list = []
 trn_acc_list = []
 val_acc_list = []
+min_val_loss = 100
+E_stop = False
 for epoch in tqdm(range(num_epochs)):
+    if (E_stop): break
     print("")
+
     #data for each epoch
     trn_loss = 0.0
     trn_correct = 0
@@ -164,10 +174,11 @@ for epoch in tqdm(range(num_epochs)):
         valid_term = 20
         if(i+1)%valid_term == 0: #after 20 updates
             model.eval()
+
+            val_loss = 0.0
+            val_correct = 0
+            val_total = 0
             with torch.no_grad(): #for validation!
-                val_loss = 0.0
-                val_correct = 0
-                val_total = 0
                 for j, validset in enumerate(valid_loader):
                     valid_in, valid_out = validset
                     valid_in, valid_out = valid_in.to(device), valid_out.to(device)
@@ -193,7 +204,18 @@ for epoch in tqdm(range(num_epochs)):
                     # scheduler.step()
                     lr = optimizer.param_groups[0]['lr']
 
+            #save if loss decreases
+            if (val_loss / len(valid_loader)) < min_val_loss:
+                #saving the model
+                min_val_loss = val_loss / len(valid_loader)
+                print("Saving best model: loss >> {:.4f} | acc >> {:.2f}".format(val_loss / len(valid_loader), 100*(val_correct / val_total)))
 
+            #early stopping
+            if es.step(torch.tensor(val_loss)):
+                E_stop = True
+                break
+
+            #print results
             print("epoch: {}/{} | step: {}/{} | trn loss: {:.4f} | trn acc: {:.2f}% | test loss: {:.4f} | test acc: {:.2f}% | lr: {:.6f}".format(
                 epoch+1, num_epochs,
                 i+1, len(train_loader),
