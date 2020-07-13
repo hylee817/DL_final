@@ -14,7 +14,7 @@ more accuracy and allow patients to receive the results of their diagnoses more 
 
 ## Dataset
 Dataset used was collected from Kaggle.
-* https://www.kaggle.com/praveengovi/coronahack-chest-xraydataset
+* https://www.kaggle.com/praveengovi/coronahack-chest-xraydataset    
 The dataset used in this project is collected from a source that again references
 other medical sources that provide diagnosed, individual patient’s x-ray chest images. I have
 used images from different categories including: COVID19, ARDS(Acute Respiratory
@@ -33,4 +33,12 @@ merged to represent a single category “Pneumonia”
 
 ## Model
 
+## Conclusion
+For this binary classification problem, the test accuracy topped at around 91-92%, showing model
+capability in diagnosing actual patients only by looking at x-ray images. The resulting accuracy and
+loss trend both seem ideal, where the test is slightly smaller than the train in accuracy, and the test being slightly bigger than train in loss. Overall, the training and hyper parameter tuning process showed that the neural network is often very prone to overfitting, and tuning the learning rate, model complexity, batch size, and data augmentation all contribute to generalizing the model. Further improvement can be made by adding more data to further generalize the model.
+
 ## Reference
+* https://github.com/FrancescoSaverioZuppichini/ResNet/
+* https://towardsdatascience.com/pytorch-tabular-binary-classification-a0368da5bb89
+* https://towardsdatascience.com/understanding-and-visualizing-resnets-442284831be8
