@@ -30,7 +30,7 @@ merged to represent a single category “Pneumonia”
 
 ## Preprocessing
 Random Cropping     
-<img src="https://user-images.githubusercontent.com/56469754/87290724-4f273a00-c539-11ea-9c35-c6e0470baec1.jpg" width="300px" height="300px" title="2" alt=""></img><br/> 
+<img align="center" src="https://user-images.githubusercontent.com/56469754/87290724-4f273a00-c539-11ea-9c35-c6e0470baec1.jpg" width="300px" height="300px" title="2" alt=""></img><br/> 
 <img src="https://user-images.githubusercontent.com/56469754/87290726-4fbfd080-c539-11ea-911b-f017a77c5e46.jpg" width="300px" height="300px" title="3" alt=""></img><br/>
 
 ## Model
